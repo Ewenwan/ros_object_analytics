@@ -38,11 +38,18 @@
   * libpcl-all-dev
   * ros-kinetic-opencv3
 
-  Other ROS packages
+  其他包　来自intel
   * [object_msgs](https://github.com/intel/object_msgs)
-  * [ros_intel_movidius_ncs](https://github.com/intel/ros_intel_movidius_ncs) or [opencl_caffe](https://github.com/intel/ros_opencl_caffe)
+  
+  * [ros_intel_movidius_ncs](https://github.com/intel/ros_intel_movidius_ncs)  VPU运行mobileNet
+    [opencl_caffe](https://github.com/intel/ros_opencl_caffe)　　　　　　　　　  GPU运行yolo_v2
+  
 
-  NOTE: OA depends on tracking feature from OpenCV (3.3 preferred, 3.2 minimum). The tracking feature is recently provided by ROS Kinetic package "ros-kinetic-opencv3" (where OpenCV **3.3.1** is integrated). However, if you're using an old version of ROS Kinetic (where OpenCV **3.2** is integrated), tracking feature is not provided. In such case you need self-build tracking from [opencv_contrib](https://github.com/opencv/opencv_contrib). It is important to keep opencv_contrib (self-built) and opencv (ROS Kinetic provided) in the same OpenCV version that can be checked from "/opt/ros/kinetic/share/opencv3/package.xml"
+        NOTE: 跟踪特征依赖 OpenCV (3.3 preferred, >= 3.2 minimum). 
+            ROS Kinetic package "ros-kinetic-opencv3" (where OpenCV **3.3.1** is integrated). 
+              However, if you're using an old version of ROS Kinetic (where OpenCV **3.2** is integrated), 
+              其他来源 [opencv_contrib](https://github.com/opencv/opencv_contrib). 
+              需要编译 opencv_contrib (self-built) 和　opencv (ROS Kinetic provided) 查看 "/opt/ros/kinetic/share/opencv3/package.xml"
 
 ## 编译和测试　build and test
   * to build　　编译
