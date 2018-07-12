@@ -1,4 +1,4 @@
-# ros_object_analytics
+# ros_object_analytics　单帧点云(欧氏距离聚类分割) + Yolo_v2/MobileNet_SSD 物体检测
       物体分析　Object Analytics (OA) 是一个ros包，
       支持实时物体检测定位和跟踪(realtime object detection, localization and tracking.)
       使用　RGB-D 相机输入,提供物体分析服务，为开发者开发更高级的机器人高级特性应用， 
@@ -16,7 +16,7 @@
 * 基于 图形处理器(GPU) 运行的目标检测　, [ros_opencl_caffe](https://github.com/Ewenwan/ros_opencl_caffe), 
   Yolo v2 model and [OpenCL Caffe](https://github.com/01org/caffe/wiki/clCaffe#yolo2-model-support) framework
 
-* 基于 视觉处理器（VPU） 运行的目标检测 , [ros_intel_movidius_ncs (devel branch)](https://github.com/Ewenwan/ros_intel_movidius_ncs), with MobileNet SSD model and Caffe framework. 
+* 基于 视觉处理器（VPU） 运行的目标检测 , [ros_intel_movidius_ncs (devel branch)](https://github.com/Ewenwan/ros_intel_movidius_ncs), with MobileNet_SSD model and Caffe framework. 
 
       (Movidius神经计算棒,首个基于USB模式的深度学习推理工具和独立的人工智能（AI）加速器)
       英特尔的子公司Movidius宣布推出Movidius Myriad X视觉处理器（VPU），
@@ -130,18 +130,63 @@
 ## object_analytics 节点分析
       1. RGBD传感器预处理分割器 splitter  
          输入: /camera/depth_registered/points
-        输出: pointcloud   3d点 
+         输出: pointcloud   3d点 
          输出: rgb 2d图像
          object_analytics_nodelet/splitter/SplitterNodelet 
+         
       2. 点云分割处理器 segmenter
+         object_analytics_launch/launch/includes/segmenter.launch
          输入: pointcloud   3d点
          输出: segmentation 分割
          object_analytics_nodelet/segmenter/SegmenterNodelet 
+         object_analytics_nodelet/src/segmenter/segmenter_nodelet.cpp
+         订阅发布话题后
+         std::unique_ptr<Segmenter> impl_;
+         点云话题回调函数:
+            boost::shared_ptr<ObjectsInBoxes3D> msg = boost::make_shared<ObjectsInBoxes3D>();// 3d框
+            msg->header = points->header;
+            impl_->segment(points, msg);//检测
+            pub_.publish(msg);          //发布检测消息
+            
+         object_analytics_nodelet/src/segmenter/segmenter.cpp
+         a. 首先　ros点云消息转化成 pcl点云消息
+               const sensor_msgs::PointCloud2::ConstPtr& points；
+               PointCloudT::Ptr pointcloud(new PointCloudT);
+               fromROSMsg<PointT>(*points, pcl_cloud);
+               
+         b. 执行分割　Segmenter::doSegment()
+            std::vector<PointIndices> cluster_indices;// 点云所属下标
+            PointCloudT::Ptr cloud_segment(new PointCloudT);// 分割点云
+              std::unique_ptr<AlgorithmProvider> provider_;
+            std::shared_ptr<Algorithm> seg = provider_->get();//　分割算法
+            seg->segment(cloud, cloud_segment, cluster_indices);// 执行分割
+            
+             AlgorithmProvider -> virtual std::shared_ptr<Algorithm> get() = 0;
+             Algorithm::segment()
+             object_analytics_nodelet/src/segmenter/organized_multi_plane_segmenter.cpp
+             class OrganizedMultiPlaneSegmenter : public Algorithm
+             OrganizedMultiPlaneSegmenter 类集成　Algorithm类
+             分割算法 segment(){} 基于pcl算法
+               1. 提取点云法线 OrganizedMultiPlaneSegmenter::estimateNormal()
+               2. 分割平面     OrganizedMultiPlaneSegmenter::segmentPlanes()           平面系数模型分割平面
+               3. 去除平面后 分割物体  OrganizedMultiPlaneSegmenter::segmentObjects() 　欧氏距离聚类分割
+             
+         c. 生成消息  Segmenter::composeResult()
+            for (auto& obj : objects)
+            {
+            object_analytics_msgs::ObjectInBox3D oib3;
+            oib3.min = obj.getMin();
+            oib3.max = obj.getMax();
+            oib3.roi = obj.getRoi();
+            msg->objects_in_boxes.push_back(oib3);
+            }
+            
       3. 3d定位器　merger
          输入: 2d检测分割结果 detection
          输入: 3d检测分割结果 segmentation
          输出: 3d定位结果　　 localization
         object_analytics_nodelet/merger/MergerNodelet
+        
       4. 目标跟踪器 tracker
          输入: 2d图像        rgb        input_rgb 
          输入: 2d检测分割结果 detection  input_2d 
@@ -149,6 +194,7 @@
          参数: 跟踪帧队列长度: aging_th：default="30"；
          参数: 跟踪置信度: probability_th" default="0.5"
          object_analytics_nodelet/tracker/TrackingNodelet
+         
 ## object_analytics_visualization 可视化
       5. 3d定位可视化　visualization3d　localization
          输入: 2d检测结果 "detection_topic" default="/object_analytics/detection" 
