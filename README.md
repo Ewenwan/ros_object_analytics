@@ -121,7 +121,7 @@
   检测信息(2d边框)object_analytics/detection ([object_msgs::ObjectsInBoxes](https://github.com/intel/object_msgs/tree/master/msg))
 
 
-## 节点分析
+## object_analytics 节点分析
       1. RGBD传感器预处理分割器 splitter  
          输入: /camera/depth_registered/points
         输出: pointcloud   3d点 
@@ -132,20 +132,30 @@
          输出: segmentation 分割
          object_analytics_nodelet/segmenter/SegmenterNodelet 
       3. 3d定位器　merger
-        输入: 2d检测分割结果 detection
+         输入: 2d检测分割结果 detection
          输入: 3d检测分割结果 segmentation
          输出: 3d定位结果　　 localization
         object_analytics_nodelet/merger/MergerNodelet
       4. 目标跟踪器 tracker
          输入: 2d图像        rgb        input_rgb 
-        输入: 2d检测分割结果 detection  input_2d 
+         输入: 2d检测分割结果 detection  input_2d 
          输出: 跟踪结果　　　 tracking　　output  
          参数: 跟踪帧队列长度: aging_th：default="30"；
          参数: 跟踪置信度: probability_th" default="0.5"
          object_analytics_nodelet/tracker/TrackingNodelet
-      5. 
-      6. 
-      7. 
+## object_analytics_visualization 可视化
+      5. 3d定位可视化　visualization3d　localization
+         输入: 2d检测结果 "detection_topic" default="/object_analytics/detection" 
+         输入: 3d检测结果 "localization_topic" default="/object_analytics/localization" 
+         输入: 2d跟踪结果 "tracking_topic" default="/object_analytics/tracking" 
+         输出: rviz可视化话题　"output_topic" default="localization_rviz" 
+
+      6. 2d跟踪可视化　visualization2d 
+         输入: 2d检测结果 "detection_topic" default="/object_analytics/detection" 
+         输入: 2d跟踪结果 "tracking_topic" default="/object_analytics/tracking" 
+         输入: 2d图像     "image_topic" default="/object_analytics/rgb" 
+         输出: rviz可视化话题　""output_topic" default="tracking_rviz"    
+
 
 
 ## KPI of differnt detection backends
