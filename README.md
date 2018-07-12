@@ -165,14 +165,58 @@
 ## 目标检测接口　
 ### GPU  yolo_v2　目标检测后端
       opencl_caffe_launch/launch/includes/nodelet.launch 
+      
 [来源　ros_opencl_caffe　](https://github.com/Ewenwan/ros_opencl_caffe)
 
-      输入: 2d图像         input_rgb        input_topic
-      输出: 2d检测分割结果  input_detection  output_topic
+      输入: 2d图像          /usb_cam/image_raw    input_topic
+      输出: 2d检测分割结果  input_detection        output_topic
+      参数文件: param_file default= find opencl_caffe_launch/launch/includes/default.yaml"
+            模型文件 net_config_path:  "/opt/clCaffe/models/yolo/yolo416/yolo_fused_deploy.prototxt"
+            权重文件 weights_path:     "/opt/clCaffe/models/yolo/yolo416/fused_yolo.caffemodel"
+            类别标签文件　labels_path: "/opt/clCaffe/data/yolo/voc.txt"
 
+      节点：　opencl_caffe/opencl_caffe_nodelet
+      opencl_caffe/src/nodelet.cpp
+      Nodelet::onInit()  --->  loadResources() 
+      检测器　detector_.reset(new DetectorGpu());
+      载入配置文件　detector_->loadResources(net_config_path, weights_path, labels_path)
+      订阅话题回调函数　 sub_ = getNodeHandle().subscribe("/usb_cam/image_raw", 1, &Nodelet::cbImage, this);
+      Nodelet::cbImage();
+         网络前向推理　detector_->runInference(image_msg, objects)
+         发布话题　　　pub_.publish(objects);
+
+
+      DetectorGpu 类
+      opencl_caffe/src/detector_gpu.cpp
+      网络初始化:
+      net.reset(new caffe::Net<Dtype>(net_cfg, caffe::TEST, caffe::Caffe::GetDefaultDevice()));
+      net->CopyTrainedLayersFrom(weights);
+
+      模式：
+      caffe::Caffe::set_mode(caffe::Caffe::GPU);
+      caffe::Caffe::SetDevice(0);
+      载入图像:
+      cv::cvtColor(cv_bridge::toCvShare(image_msg, "rgb8")->image, image, cv::COLOR_RGB2BGR);
+      initInputBlob(resizeImage(image), input_channels);
+      网络前传:
+      net->Forward();
+      获取网络结果:
+      caffe::Blob<Dtype>* result_blob = net->output_blobs()[0];
+      const Dtype* result = result_blob->cpu_data();
+      const int num_det = result_blob->height();
+      检测结果:
+      object_msgs::ObjectInBox object_in_box;
+      object_in_box.object.object_name = labels_list[classid];
+      object_in_box.object.probability = confidence;
+      object_in_box.roi.x_offset = left;
+      object_in_box.roi.y_offset = top;
+      object_in_box.roi.height = bot - top;
+      object_in_box.roi.width = right - left;
+      objects.objects_vector.push_back(object_in_box);
 
 ### VPU   mobileNetSSD 目标检测后端
-movidius_ncs_launch/launch/includes/ncs_stream_detection.launch
+      movidius_ncs_launch/launch/includes/ncs_stream_detection.launch
+
 [来源　ros_intel_movidius_ncs　](https://github.com/Ewenwan/ros_intel_movidius_ncs)
 
       输入: 2d图像         input_rgb        input_topic
