@@ -167,59 +167,59 @@
       opencl_caffe_launch/launch/includes/nodelet.launch 
 [来源　ros_opencl_caffe　](https://github.com/Ewenwan/ros_opencl_caffe)
 
-         输入: 2d图像         input_rgb        input_topic
-         输出: 2d检测分割结果  input_detection  output_topic
+      输入: 2d图像         input_rgb        input_topic
+      输出: 2d检测分割结果  input_detection  output_topic
 
 
 ### VPU   mobileNetSSD 目标检测后端
-      movidius_ncs_launch/launch/includes/ncs_stream_detection.launch
+movidius_ncs_launch/launch/includes/ncs_stream_detection.launch
 [来源　ros_intel_movidius_ncs　](https://github.com/Ewenwan/ros_intel_movidius_ncs)
 
-         输入: 2d图像         input_rgb        input_topic
-         输出: 2d检测分割结果  input_detection  output_topic
-         参数: 
-               模型类型 name="cnn_type" default="mobilenetssd"
-               模型配置文件　name="param_file" default="$(find movidius_ncs_launch)/config/mobilenetssd.yaml"
-                  网络图配置文件 graph_file_path: "/opt/movidius/ncappzoo/caffe/SSD_MobileNet/graph"
-                  类别文件voc21  category_file_path: "/opt/movidius/ncappzoo/data/ilsvrc12/voc21.txt"
-                  网络输入尺寸   network_dimension: 300
-                  通道均值 :
-                    channel1_mean: 127.5
-                    channel2_mean: 127.5
-                    channel3_mean: 127.5
-                  归一化:
-                    scale: 0.007843
-                节点文件　movidius_ncs_stream/NCSNodelet　movidius_ncs_stream/src/ncs_nodelet.cpp
-　　　　　　　   输入话题　input_topic ： 2d图像　      /camera/rgb/image_raw
-         　　　 输出话题  output_topic : 2d检测框结果  detected_objects
-                ncs_manager_handle_ = std::make_shared<movidius_ncs_lib::NCSManager>();
-                movidius_ncs_lib::NCSManager 来自 movidius_ncs_lib/src/ncs_manager.cpp
-                NCSImpl::init(){ }
-                订阅 rgb图像的回调函数 cbDetect()
-                sub_ = it->subscribe("/camera/rgb/image_raw", 1, &NCSImpl::cbDetect, this);
-                cbDetect(){ }
-                1. 从话题复制图像
-                  cv::Mat camera_data = cv_bridge::toCvCopy(image_msg, "bgr8")->image;
-                2. 提取检测结果回调函数
-                  FUNP_D detection_result_callback = boost::bind(&NCSImpl::cbGetDetectionResult, this, _1, _2);
-                3. 进行目标检测 
-                  ncs_manager_handle_->detectStream(camera_data, detection_result_callback, image_msg);
-                NCSManager::detectStream(){}
-                得到检测结果 : movidius_ncs_lib::DetectionResultPtr result;
-                检测结果:
-                 for (auto item : result->items_in_boxes)
-                  object_msgs::ObjectInBox obj;
-                  obj.object.object_name = item.item.category;
-                  obj.object.probability = item.item.probability;
-                  obj.roi.x_offset = item.bbox.x;
-                  obj.roi.y_offset = item.bbox.y;
-                  obj.roi.width = item.bbox.width;
-                  obj.roi.height = item.bbox.height;
-                  objs_in_boxes.objects_vector.push_back(obj);
-               发布检测结果:  
-                  objs_in_boxes.header = header;
-                  objs_in_boxes.inference_time_ms = result->time_taken;
-                  pub_.publish(objs_in_boxes);
+      输入: 2d图像         input_rgb        input_topic
+      输出: 2d检测分割结果  input_detection  output_topic
+      参数: 
+         模型类型 name="cnn_type" default="mobilenetssd"
+         模型配置文件　name="param_file" default="$(find movidius_ncs_launch)/config/mobilenetssd.yaml"
+            网络图配置文件 graph_file_path: "/opt/movidius/ncappzoo/caffe/SSD_MobileNet/graph"
+            类别文件voc21  category_file_path: "/opt/movidius/ncappzoo/data/ilsvrc12/voc21.txt"
+            网络输入尺寸   network_dimension: 300
+            通道均值 :
+              channel1_mean: 127.5
+              channel2_mean: 127.5
+              channel3_mean: 127.5
+            归一化:
+              scale: 0.007843
+          节点文件　movidius_ncs_stream/NCSNodelet　movidius_ncs_stream/src/ncs_nodelet.cpp
+      输入话题　input_topic ： 2d图像　      /camera/rgb/image_raw
+       输出话题  output_topic : 2d检测框结果  detected_objects
+          ncs_manager_handle_ = std::make_shared<movidius_ncs_lib::NCSManager>();
+          movidius_ncs_lib::NCSManager 来自 movidius_ncs_lib/src/ncs_manager.cpp
+          NCSImpl::init(){ }
+          订阅 rgb图像的回调函数 cbDetect()
+          sub_ = it->subscribe("/camera/rgb/image_raw", 1, &NCSImpl::cbDetect, this);
+          cbDetect(){ }
+          1. 从话题复制图像
+            cv::Mat camera_data = cv_bridge::toCvCopy(image_msg, "bgr8")->image;
+          2. 提取检测结果回调函数
+            FUNP_D detection_result_callback = boost::bind(&NCSImpl::cbGetDetectionResult, this, _1, _2);
+          3. 进行目标检测 
+            ncs_manager_handle_->detectStream(camera_data, detection_result_callback, image_msg);
+          NCSManager::detectStream(){}
+          得到检测结果 : movidius_ncs_lib::DetectionResultPtr result;
+          检测结果:
+           for (auto item : result->items_in_boxes)
+            object_msgs::ObjectInBox obj;
+            obj.object.object_name = item.item.category;
+            obj.object.probability = item.item.probability;
+            obj.roi.x_offset = item.bbox.x;
+            obj.roi.y_offset = item.bbox.y;
+            obj.roi.width = item.bbox.width;
+            obj.roi.height = item.bbox.height;
+            objs_in_boxes.objects_vector.push_back(obj);
+         发布检测结果:  
+            objs_in_boxes.header = header;
+            objs_in_boxes.inference_time_ms = result->time_taken;
+            pub_.publish(objs_in_boxes);
                   
 ## KPI of differnt detection backends
 <table>
