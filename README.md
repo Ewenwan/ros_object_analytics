@@ -11,12 +11,12 @@
             物体跟踪　[object tracking](https://github.com/intel/ros_object_analytics/tree/master/object_analytics_msgs), 
             物体3d定位　[object localization](https://github.com/intel/ros_object_analytics/object_analytics_msgs) 
 
-优秀的算法：
+依赖 优秀的算法：
 
-* 基于 图形处理器(GPU) 运行的目标检测　, [ros_opencl_caffe](https://github.com/intel/ros_opencl_caffe), 
+* 基于 图形处理器(GPU) 运行的目标检测　, [ros_opencl_caffe](https://github.com/Ewenwan/ros_opencl_caffe), 
   Yolo v2 model and [OpenCL Caffe](https://github.com/01org/caffe/wiki/clCaffe#yolo2-model-support) framework
 
-* 基于 视觉处理器（VPU） 运行的目标检测 , [ros_intel_movidius_ncs (devel branch)](https://github.com/intel/ros_intel_movidius_ncs/tree/devel/), with MobileNet SSD model and Caffe framework. 
+* 基于 视觉处理器（VPU） 运行的目标检测 , [ros_intel_movidius_ncs (devel branch)](https://github.com/Ewenwan/ros_intel_movidius_ncs), with MobileNet SSD model and Caffe framework. 
 
       (Movidius神经计算棒,首个基于USB模式的深度学习推理工具和独立的人工智能（AI）加速器)
       英特尔的子公司Movidius宣布推出Movidius Myriad X视觉处理器（VPU），
@@ -41,8 +41,9 @@
   其他包　来自intel
   * [object_msgs](https://github.com/intel/object_msgs)
   
-  * [ros_intel_movidius_ncs](https://github.com/intel/ros_intel_movidius_ncs)  VPU运行mobileNet
-    [opencl_caffe](https://github.com/intel/ros_opencl_caffe)　　　　　　　　　  GPU运行yolo_v2
+  * [ros_intel_movidius_ncs](https://github.com/Ewenwan/ros_intel_movidius_ncs)  VPU运行mobileNetSSD
+  *  或者
+  * [opencl_caffe](https://github.com/intel/ros_opencl_caffe)　　　　　　　　　  GPU运行yolo_v2
   
 
         NOTE: 跟踪特征依赖 OpenCV (3.3 preferred, >= 3.2 minimum). 
@@ -92,10 +93,15 @@
    roslaunch object_analytics_launch analytics_opencl_caffe.launch
    ```
    
+       这里会直接运行  opencl_caffe_launch)/launch/includes/nodelet.launch 
+   
 * launch with Movidius NCS as detection backend mobileNetSSD 目标检测后端
    ```bash
    roslaunch object_analytics_launch analytics_movidius_ncs.launch
    ```
+   
+      这里会直接运行 movidius_ncs_launch)/launch/includes/ncs_stream_detection.launch
+
 
   Frequently used options
   * **input_points** Specify arg "input_points" for the name of the topic publishing the [sensor_msgs::PointCloud2](http://docs.ros.org/api/sensor_msgs/html/msg/PointCloud2.html) messages by RGB-D camera. 
@@ -156,8 +162,65 @@
          输入: 2d图像     "image_topic" default="/object_analytics/rgb" 
          输出: rviz可视化话题　""output_topic" default="tracking_rviz"    
 
+## 目标检测接口　
+### GPU  yolo_v2　目标检测后端
+      opencl_caffe_launch/launch/includes/nodelet.launch 
+[来源　ros_opencl_caffe　](https://github.com/Ewenwan/ros_opencl_caffe)
+
+         输入: 2d图像         input_rgb        input_topic
+         输出: 2d检测分割结果  input_detection  output_topic
 
 
+### VPU   mobileNetSSD 目标检测后端
+      movidius_ncs_launch/launch/includes/ncs_stream_detection.launch
+[来源　ros_intel_movidius_ncs　](https://github.com/Ewenwan/ros_intel_movidius_ncs)
+
+         输入: 2d图像         input_rgb        input_topic
+         输出: 2d检测分割结果  input_detection  output_topic
+         参数: 
+               模型类型 name="cnn_type" default="mobilenetssd"
+               模型配置文件　name="param_file" default="$(find movidius_ncs_launch)/config/mobilenetssd.yaml"
+                  网络图配置文件 graph_file_path: "/opt/movidius/ncappzoo/caffe/SSD_MobileNet/graph"
+                  类别文件voc21  category_file_path: "/opt/movidius/ncappzoo/data/ilsvrc12/voc21.txt"
+                  网络输入尺寸   network_dimension: 300
+                  通道均值 :
+                    channel1_mean: 127.5
+                    channel2_mean: 127.5
+                    channel3_mean: 127.5
+                  归一化:
+                    scale: 0.007843
+                节点文件　movidius_ncs_stream/NCSNodelet　movidius_ncs_stream/src/ncs_nodelet.cpp
+　　　　　　　   输入话题　input_topic ： 2d图像　      /camera/rgb/image_raw
+         　　　 输出话题  output_topic : 2d检测框结果  detected_objects
+                ncs_manager_handle_ = std::make_shared<movidius_ncs_lib::NCSManager>();
+                movidius_ncs_lib::NCSManager 来自 movidius_ncs_lib/src/ncs_manager.cpp
+                NCSImpl::init(){ }
+                订阅 rgb图像的回调函数 cbDetect()
+                sub_ = it->subscribe("/camera/rgb/image_raw", 1, &NCSImpl::cbDetect, this);
+                cbDetect(){ }
+                1. 从话题复制图像
+                  cv::Mat camera_data = cv_bridge::toCvCopy(image_msg, "bgr8")->image;
+                2. 提取检测结果回调函数
+                  FUNP_D detection_result_callback = boost::bind(&NCSImpl::cbGetDetectionResult, this, _1, _2);
+                3. 进行目标检测 
+                  ncs_manager_handle_->detectStream(camera_data, detection_result_callback, image_msg);
+                NCSManager::detectStream(){}
+                得到检测结果 : movidius_ncs_lib::DetectionResultPtr result;
+                检测结果:
+                 for (auto item : result->items_in_boxes)
+                  object_msgs::ObjectInBox obj;
+                  obj.object.object_name = item.item.category;
+                  obj.object.probability = item.item.probability;
+                  obj.roi.x_offset = item.bbox.x;
+                  obj.roi.y_offset = item.bbox.y;
+                  obj.roi.width = item.bbox.width;
+                  obj.roi.height = item.bbox.height;
+                  objs_in_boxes.objects_vector.push_back(obj);
+               发布检测结果:  
+                  objs_in_boxes.header = header;
+                  objs_in_boxes.inference_time_ms = result->time_taken;
+                  pub_.publish(objs_in_boxes);
+                  
 ## KPI of differnt detection backends
 <table>
     <tr>
