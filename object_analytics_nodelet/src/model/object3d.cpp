@@ -1,17 +1,5 @@
 /*
  * Copyright (c) 2017 Intel Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 #include <algorithm>
@@ -26,31 +14,39 @@ namespace object_analytics_nodelet
 {
 namespace model
 {
+  
+  
+// 从XYZRGBA点云中 获取 点云团对应的2d边框 以及/* 点云团 中 最小值3d点、最大值3d点(用于3d(长方体))
+// using PointT = pcl::PointXYZRGBA;
+//using PointCloudT = pcl::PointCloud<PointT>; // XYZRGBA 点+颜色 点云
 Object3D::Object3D(const PointCloudT::ConstPtr& cloud, const std::vector<int>& indices)
 {
   pcl::PointCloud<PointXYZPixel>::Ptr seg(new pcl::PointCloud<PointXYZPixel>);
-  ObjectUtils::copyPointCloud(cloud, indices, seg);
+  
+  ObjectUtils::copyPointCloud(cloud, indices, seg);// 由点云 indices 除以 / 取余 图像宽度 得到像素坐标
+  
 
   PointXYZPixel x_min_point, x_max_point;
-  ObjectUtils::getMinMaxPointsInX(seg, x_min_point, x_max_point);
+  ObjectUtils::getMinMaxPointsInX(seg, x_min_point, x_max_point);// 3d点中, x坐标值的 最大最小值
   min_.x = x_min_point.x;
   max_.x = x_max_point.x;
 
   PointXYZPixel y_min_point, y_max_point;
-  ObjectUtils::getMinMaxPointsInY(seg, y_min_point, y_max_point);
+  ObjectUtils::getMinMaxPointsInY(seg, y_min_point, y_max_point);// 3d点中, y坐标值的 最大最小值
   min_.y = y_min_point.y;
   max_.y = y_max_point.y;
 
   PointXYZPixel z_min_point, z_max_point;
-  ObjectUtils::getMinMaxPointsInZ(seg, z_min_point, z_max_point);
+  ObjectUtils::getMinMaxPointsInZ(seg, z_min_point, z_max_point);// 3d点中, z坐标值的 最大最小值
   min_.z = z_min_point.z;
   max_.z = z_max_point.z;
 
-  ObjectUtils::getProjectedROI(seg, this->roi_);
+  ObjectUtils::getProjectedROI(seg, this->roi_);// 从 3d+2d点云团里获取 对应2d roi边框======
+ //  2d 像素点集 获取 对应的roi边框 min_x, min_y, max_x-min_x, max_y-min_y================
 }
 
 Object3D::Object3D(const object_analytics_msgs::ObjectInBox3D& object3d)
-  : roi_(object3d.roi), min_(object3d.min), max_(object3d.max)
+  : roi_(object3d.roi), min_(object3d.min), max_(object3d.max)// 点云团对应的2d边框: 最小值3d点、最大值3d点
 {
 }
 
