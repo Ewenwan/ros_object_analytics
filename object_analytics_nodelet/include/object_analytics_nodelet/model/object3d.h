@@ -1,17 +1,4 @@
 /*
- * Copyright (c) 2017 Intel Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 #ifndef OBJECT_ANALYTICS_NODELET_MODEL_OBJECT3D_H
@@ -107,9 +94,9 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const Object3D& obj);
 
 private:
-  sensor_msgs::RegionOfInterest roi_;
-  geometry_msgs::Point32 min_;
-  geometry_msgs::Point32 max_;
+  sensor_msgs::RegionOfInterest roi_;// 2点云团对应的图像的 roi
+  geometry_msgs::Point32 min_;       // 三个坐标轴 最小的三个量
+  geometry_msgs::Point32 max_;       // 三个坐标轴 最大的三个量
 };
 
 using Object3DPtr = std::shared_ptr<Object3D>;
