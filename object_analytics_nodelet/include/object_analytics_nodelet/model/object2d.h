@@ -1,17 +1,7 @@
 /*
- * Copyright (c) 2017 Intel Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+2d物体
+  const sensor_msgs::RegionOfInterest roi_;// 物体边框
+  const object_msgs::Object object_;// 物体名称 + 概率
  */
 
 #ifndef OBJECT_ANALYTICS_NODELET_MODEL_OBJECT2D_H
@@ -72,12 +62,12 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const Object2D& obj);
 
 private:
-  const sensor_msgs::RegionOfInterest roi_;
-  const object_msgs::Object object_;
+  const sensor_msgs::RegionOfInterest roi_;// 物体边框
+  const object_msgs::Object object_;// 物体名称 + 概率
 };
 
-using Object2DPtr = std::shared_ptr<Object2D>;
-using Object2DConstPtr = std::shared_ptr<Object2D const>;
+using Object2DPtr = std::shared_ptr<Object2D>;// 2d物体类 指针
+using Object2DConstPtr = std::shared_ptr<Object2D const>;// 2d物体类 常指针
 }  // namespace model
 }  // namespace object_analytics_nodelet
 #endif  // OBJECT_ANALYTICS_NODELET_MODEL_OBJECT2D_H
