@@ -1,4 +1,7 @@
-/*
+/* 3d 物体
+  sensor_msgs::RegionOfInterest roi_;// 2点云团对应的图像的 roi
+  geometry_msgs::Point32 min_;// 三个坐标轴 最小的三个量
+  geometry_msgs::Point32 max_;// 三个坐标轴 最大的三个量
  */
 
 #ifndef OBJECT_ANALYTICS_NODELET_MODEL_OBJECT3D_H
