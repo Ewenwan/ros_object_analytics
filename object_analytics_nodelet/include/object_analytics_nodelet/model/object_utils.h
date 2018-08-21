@@ -1,17 +1,4 @@
 /*
- * Copyright (c) 2017 Intel Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 #ifndef OBJECT_ANALYTICS_NODELET_MODEL_OBJECT_UTILS_H
@@ -32,14 +19,15 @@
 #include "object_analytics_nodelet/model/object2d.h"
 #include "object_analytics_nodelet/model/object3d.h"
 
+// PCL新定义点类型   3d点坐标 + 2d的像素坐标值 3d-2d点对
 struct PointXYZPixel
 {
-  PCL_ADD_POINT4D;
-  uint32_t pixel_x;
+  PCL_ADD_POINT4D;// 
+  uint32_t pixel_x;// 像素值
   uint32_t pixel_y;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;  // NOLINT
-
+// 注册点类型
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZPixel,                // xyz + pixel x, y as fields
                                   (float, x, x)                 // field x
                                   (float, y, y)                 // field y
@@ -50,14 +38,15 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZPixel,                // xyz + pixel x
 
 namespace object_analytics_nodelet
 {
-using object_msgs::ObjectsInBoxes;
-using object_analytics_msgs::ObjectsInBoxes3D;
-using object_analytics_nodelet::model::Object2D;
-using object_analytics_nodelet::model::Object3D;
-using Relation = std::pair<Object2D, Object3D>;
-using RelationVector = std::vector<Relation>;
-using Object2DVector = std::vector<Object2D>;
-using Object3DVector = std::vector<Object3D>;
+using object_msgs::ObjectsInBoxes;// 2d物体边框数组 ---- roi数组
+using object_analytics_msgs::ObjectsInBoxes3D;// 3d变空数组(2d roi+ point3d_max min)
+using object_analytics_nodelet::model::Object2D;// ROI边框 + 物体名
+using object_analytics_nodelet::model::Object3D;// ROI边框 + point3d_max min
+using Relation = std::pair<Object2D, Object3D>;// 2d框 和 3d点云团 配对pair关系
+using RelationVector = std::vector<Relation>;// 配对关系 数组
+using Object2DVector = std::vector<Object2D>;// 2d框数组
+using Object3DVector = std::vector<Object3D>;// 3d点云团数组
+
 
 namespace model
 {
